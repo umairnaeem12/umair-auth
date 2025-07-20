@@ -46,11 +46,17 @@ export async function getPrismaClient(projectId) {
 
     if (!project) throw new Error(`Project ${projectId} not found`);
 
+    console.log("🚀 ~ getPrismaClient ~ project:", project)
+    if (!project?.dbUrl) {
+      throw new Error("❌ dbUrl not found for project");
+    }
+
     // Create tenant client with Accelerate URL
     const tenantClient = new PrismaClient({
       datasources: {
-        db: { url: project.dbUrl } // Should be prisma+postgres:// URL
-      }
+        db: { url: project.dbUrl },
+      },
+      log: ['query', 'info', 'warn', 'error'],
     });
 
     await tenantClient.$connect();
@@ -66,9 +72,9 @@ export async function getPrismaClient(projectId) {
     });
     throw error;
   }
-    console.log("🚀 ~ getPrismaClient ~ project:", project)
-    console.log("🚀 ~ getPrismaClient ~ project:", project)
-    console.log("🚀 ~ getPrismaClient ~ project:", project)
+  console.log("🚀 ~ getPrismaClient ~ project:", project)
+  console.log("🚀 ~ getPrismaClient ~ project:", project)
+  console.log("🚀 ~ getPrismaClient ~ project:", project)
 }
 
 // Keep other exports (getPrismaClientFromCache, getJwtSecret)
