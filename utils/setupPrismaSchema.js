@@ -50,6 +50,11 @@
 //   }
 // }
 
+import { writeFile, unlink, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import { exec } from "child_process";
+import { promisify } from "util";
+const execAsync = promisify(exec);
 
 export async function pushPrismaSchemaToDatabase(dbUrl, projectId) {
   const tmpDir = "./tmp";
