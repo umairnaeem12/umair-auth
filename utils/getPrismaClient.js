@@ -66,6 +66,9 @@ export async function getPrismaClient(projectId) {
     });
     throw error;
   }
+    console.log("🚀 ~ getPrismaClient ~ project:", project)
+    console.log("🚀 ~ getPrismaClient ~ project:", project)
+    console.log("🚀 ~ getPrismaClient ~ project:", project)
 }
 
 // Keep other exports (getPrismaClientFromCache, getJwtSecret)

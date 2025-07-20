@@ -27,7 +27,7 @@ export async function register(req, res) {
 
     try {
         const projectId = req.projectId;
-        const response = await registerUser(result.data, projectId);
+        const response = await registerUser(projectId, result.data);
         res.status(201).json(response);
     } catch (error) {
         console.error("Register Controller Error:", error);

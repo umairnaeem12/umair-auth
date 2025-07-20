@@ -29,7 +29,7 @@ async function generateToken(user, projectId) {
   }
 }
 
-export async function registerUser({ name, email, password }, projectId) {
+export async function registerUser(projectId, { name, email, password }) {
   const prisma = await getPrismaClient(projectId);
 
   const existing = await prisma.user.findUnique({ where: { email } });
