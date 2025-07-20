@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "nixpacks",
+    "config": {
+      "startCommand": "prisma generate && node index.js"
+    }
+  },
+  "deploy": {
+    "startCommand": "node index.js"
+  }
+}

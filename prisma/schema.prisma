@@ -1,10 +1,11 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("MAIN_DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model Project {
@@ -12,6 +13,6 @@ model Project {
   dbUrl     String
   jwtSecret String
   createdAt DateTime @default(now())
-  
-  @@map("Project")  // Explicit table name mapping
+
+  @@map("Project")
 }
