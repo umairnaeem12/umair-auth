@@ -31,7 +31,6 @@ async function generateToken(user, projectId) {
 
 export async function registerUser({ name, email, password }, projectId) {
   const prisma = await getPrismaClient(projectId);
-  console.log("🚀 ~ registerUser ~ tenant prisma loaded:", !!prisma);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error("Email already registered");
