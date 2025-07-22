@@ -1,0 +1,7 @@
+import { pushPrismaSchemaToDatabase } from "../utils/setupPrismaSchema.js";
+
+// Replace these with real values
+const dbUrl = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza181WFFTMVNBamNKb2FHQk5lRlVJcEoiLCJhcGlfa2V5IjoiMDFLMFNGTlpKNTU5OVRFWUpWUjVKQzVEWTMiLCJ0ZW5hbnRfaWQiOiJhNTgwNjVkYzExODU5YjVkZWFiMmRkOWM0NTRhNTEyZmMyODI1NTVjMWJmYjgzMDczODViOWM2YzczMjA2ZTZmIiwiaW50ZXJuYWxfc2VjcmV0IjoiZTAyMGZjYjktODVmNy00OTdlLWJmNGEtYmFiN2ZmMDNkMGU2In0.Ih6G2KxTHE7MIhGb6E5WfvRMwLTjWCON6xCPCOqZe1A";
+const projectId = "proj_a08a62e4f072c8d6";
+
+await pushPrismaSchemaToDatabase(dbUrl, projectId);

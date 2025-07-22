@@ -18,7 +18,7 @@ export async function pushPrismaSchemaToDatabase(dbUrl, projectId) {
 generator client {
   provider = "prisma-client-js"
   previewFeatures = ["clientExtensions", "dataProxy"]
-  output = "./prisma/tenants/generated-${projectId}"
+  output = "./tmp/prisma/tenants/generated-${projectId}"
 }
 
 datasource db {
