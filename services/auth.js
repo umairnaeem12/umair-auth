@@ -30,7 +30,7 @@ async function generateToken(user, projectId) {
 }
 
 export async function registerUser(projectId, { name, email, password }) {
-  const prisma = new getPrismaClient(projectId);
+  const prisma = await getPrismaClient(projectId);
 
   const existing = await prisma.user.findUnique({
     where: {
