@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { getClient, setClient } from "./tenantCache.js";
+import path from "path";
+import { pathToFileURL } from "url";
 
 // Initialize control DB with Accelerate URL
 const controlDb = new PrismaClient({
@@ -35,46 +37,41 @@ const controlDb = new PrismaClient({
 
 export async function getPrismaClient(projectId) {
   try {
-    // First try standard model access
+    // 1. Fetch the project from control DB
     let project;
-    if ('project' in controlDb) {
+    if ("project" in controlDb) {
       project = await controlDb.project.findUnique({ where: { id: projectId } });
     } else {
-      // Fallback to raw query
       [project] = await controlDb.$queryRaw`SELECT * FROM "Project" WHERE id = ${projectId}`;
     }
 
-    if (!project) throw new Error(`Project ${projectId} not found`);
+    if (!project) throw new Error(`❌ Project ${projectId} not found`);
+    if (!project?.dbUrl) throw new Error("❌ dbUrl not found for project");
 
-    console.log("🚀 ~ getPrismaClient ~ project:", project)
-    if (!project?.dbUrl) {
-      throw new Error("❌ dbUrl not found for project");
-    }
+    console.log("🚀 ~ getPrismaClient ~ project:", project);
 
-    // Create tenant client with Accelerate URL
-    const tenantClient = new PrismaClient({
-      datasources: {
-        db: { url: project.dbUrl },
-      },
-      log: ['query', 'info', 'warn', 'error'],
-    });
+    // 2. Resolve the dynamic Prisma client path
+    const generatedPath = path.resolve(`./tmp/generated-${projectId}/index.js`);
+    const moduleUrl = pathToFileURL(generatedPath).href;
+
+    // 3. Dynamically import the generated Prisma client
+    const { PrismaClient: TenantClient } = await import(moduleUrl);
+    const tenantClient = new TenantClient();
 
     await tenantClient.$connect();
-    setClient(projectId, tenantClient);
 
+    // 4. Cache and return the client
+    setClient(projectId, tenantClient);
     return tenantClient;
 
   } catch (error) {
-    console.error("Error in getPrismaClient:", {
+    console.error("❌ Error in getPrismaClient:", {
       message: error.message,
       projectId,
-      stack: error.stack
+      stack: error.stack,
     });
     throw error;
   }
-  console.log("🚀 ~ getPrismaClient ~ project:", project)
-  console.log("🚀 ~ getPrismaClient ~ project:", project)
-  console.log("🚀 ~ getPrismaClient ~ project:", project)
 }
 
 // Keep other exports (getPrismaClientFromCache, getJwtSecret)
