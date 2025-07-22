@@ -30,9 +30,16 @@ async function generateToken(user, projectId) {
 }
 
 export async function registerUser(projectId, { name, email, password }) {
-  const prisma = await getPrismaClient(projectId);
+  const prisma = new getPrismaClient(projectId);
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findUnique({
+    where: {
+      email_projectId: {
+        email,
+        projectId,
+      }
+    }
+  });
   if (existing) throw new Error("Email already registered");
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -43,6 +50,7 @@ export async function registerUser(projectId, { name, email, password }) {
       email,
       password: hashedPassword,
       isVerified: false,
+      projectId
     },
   });
 
