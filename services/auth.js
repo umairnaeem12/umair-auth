@@ -32,17 +32,28 @@ async function generateToken(user, projectId) {
 }
 
 export async function registerUser(projectId, { name, email, password }) {
-  const project = await globalPrisma.project.findUnique({ where: { id: projectId } });
-  if (!project || !project.dbUrl) throw new Error("Invalid project or dbUrl");
+  // 1. Get control DB project
+  const project = await globalPrisma.project.findUnique({
+    where: { id: projectId }
+  });
+  if (!project || !project.dbUrl) {
+    throw new Error("Invalid project or dbUrl");
+  }
 
+  // 2. Get dynamic Prisma client for tenant DB
   const prisma = await getPrismaClient(projectId, project.dbUrl);
 
+  // 3. Check if user already exists
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) throw new Error("Email already registered");
+  if (existing) {
+    throw new Error("Email already registered");
+  }
 
+  // 4. Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  await prisma.user.create({
+  // 5. Create user in tenant DB
+  const user = await prisma.user.create({
     data: {
       name,
       email,
@@ -51,7 +62,13 @@ export async function registerUser(projectId, { name, email, password }) {
     },
   });
 
-  return { message: "User registered successfully" };
+  // 6. Generate token (optional)
+  const token = await generateToken(user, projectId);
+
+  return {
+    message: "User registered successfully",
+    token, // optional
+  };
 }
 
 export async function loginUser({ email, password }, projectId) {

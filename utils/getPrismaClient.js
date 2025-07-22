@@ -1,20 +1,17 @@
-import { PrismaClient } from '@prisma/client';
+// utils/getPrismaClient.js
+import { PrismaClient } from "@prisma/client";
 
 const clientCache = {};
 
 export async function getPrismaClient(projectId, dbUrl) {
-  if (clientCache[projectId]) {
-    return clientCache[projectId];
-  }
+  if (clientCache[projectId]) return clientCache[projectId];
 
-  const client = new PrismaClient({
-    datasources: {
-      db: { url: dbUrl },
-    },
+  const prisma = new PrismaClient({
+    datasources: { db: { url: dbUrl } }
   });
 
-  await client.$connect();
-  clientCache[projectId] = client;
+  await prisma.$connect();
+  clientCache[projectId] = prisma;
 
-  return client;
+  return prisma;
 }
