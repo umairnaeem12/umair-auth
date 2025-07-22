@@ -1,17 +1,19 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateOtp, getOtpExpiry } from "../utils/sendOtp.js";
-import { getJwtSecret, getPrismaClient } from "../utils/getPrismaClient.js";
+import { getPrismaClient } from "../utils/getPrismaClient.js";
+import { getJwtSecret } from "../utils/getJwtSecret.js";
+
 
 // 🔐 Generate token
 async function generateToken(user, projectId) {
   try {
     console.log("🔐 Generating token for user:", user.id, "project:", projectId);
 
-    // const jwtSecret = await getJwtSecret(projectId);
-    // if (!jwtSecret) {
-    //   throw new Error("Missing JWT secret");
-    // }
+    const jwtSecret = await getJwtSecret(projectId);
+    if (!jwtSecret) {
+      throw new Error("Missing JWT secret");
+    }
 
     const token = jwt.sign({ userId: user.id }, jwtSecret, {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d",
