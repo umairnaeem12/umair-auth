@@ -51,8 +51,10 @@ export async function getPrismaClient(projectId) {
     console.log("🚀 ~ getPrismaClient ~ project:", project);
 
     // 2. Resolve the dynamic Prisma client path
-    const generatedPath = path.resolve(`./prisma/tenants/generated-${projectId}/index.js`);
-    const moduleUrl = pathToFileURL(generatedPath).href;
+    const generatedPath = `./prisma/tenants/generated-${projectId}`;
+    if (!existsSync(generatedPath)) {
+      await execAsync(`npx prisma generate --schema=${schemaPath}`);
+    }
 
     // 3. Dynamically import the generated Prisma client
     const { PrismaClient: TenantClient } = await import(moduleUrl);
