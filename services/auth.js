@@ -1,12 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateOtp, getOtpExpiry } from "../utils/sendOtp.js";
-import { getDbClient } from "../utils/getDbClient.js"; // your new DB client
 import { getTenantDb } from "../utils/getTenantDbClient.js";
 
 // 🔐 Generate token
-function generateToken(userId) {
-  const jwtSecret = process.env.JWT_SECRET;
+function generateToken(userId, jwtSecret) {
   if (!jwtSecret) throw new Error("Missing JWT_SECRET");
   return jwt.sign({ userId }, jwtSecret, { expiresIn: "7d" });
 }
@@ -26,14 +24,15 @@ export async function registerUser(projectId, { name, email, password }) {
     [name, email, hashed, false]
   );
 
-  const token = jwt.sign({ userId: result.rows[0].id }, jwtSecret, { expiresIn: "7d" });
-
+  const token = generateToken(result.rows[0].id, jwtSecret);
   return { message: "User registered", token };
 }
 
 export async function loginUser({ email, password }, projectId) {
-  const db = getDbClientByProject(projectId);
-  const user = await db.user.findUnique({ where: { email } });
+  const { tenantDb, jwtSecret } = await getTenantDb(projectId);
+
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -42,87 +41,90 @@ export async function loginUser({ email, password }, projectId) {
   const otp = generateOtp();
   const otpExpiresAt = getOtpExpiry();
 
-  await db.user.update({
-    where: { email },
-    data: { otpCode: otp, otpExpiresAt },
-  });
+  await tenantDb.query(
+    `UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE email = $3`,
+    [otp, otpExpiresAt, email]
+  );
 
   console.log(`OTP for ${email}: ${otp}`);
-
   return { message: "OTP sent. Please verify your login." };
 }
 
 export async function verifySignupOtp({ email, otp }, projectId) {
-  const db = getDbClientByProject(projectId);
+  const { tenantDb, jwtSecret } = await getTenantDb(projectId);
 
-  const user = await db.user.findUnique({ where: { email } });
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
-  if (user.otpCode !== otp || user.otpExpiresAt < new Date()) {
+  if (user.otp_code !== otp || new Date(user.otp_expires_at) < new Date()) {
     throw new Error("Invalid or expired OTP");
   }
 
-  const updatedUser = await db.user.update({
-    where: { email },
-    data: {
-      otpCode: null,
-      otpExpiresAt: null,
-      isVerified: true,
-    },
-  });
+  await tenantDb.query(
+    `UPDATE users SET otp_code = NULL, otp_expires_at = NULL, is_verified = true WHERE email = $1`,
+    [email]
+  );
 
-  const token = generateToken(updatedUser.id);
+  const token = generateToken(user.id, jwtSecret);
 
   return {
     message: "Login verified successfully",
-    user: updatedUser,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      is_verified: true,
+      created_at: user.created_at,
+    },
     token,
   };
 }
 
 export async function resetOtp(email, projectId) {
-  const db = getDbClientByProject(projectId);
+  const { tenantDb } = await getTenantDb(projectId);
 
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  if (userRes.rows.length === 0) throw new Error("User not found");
 
   const otp = generateOtp();
   const otpExpiresAt = getOtpExpiry();
 
-  await db.user.update({
-    where: { email },
-    data: { otpCode: otp, otpExpiresAt },
-  });
+  await tenantDb.query(
+    `UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE email = $3`,
+    [otp, otpExpiresAt, email]
+  );
 
   console.log(`OTP for ${email}: ${otp}`);
   return { message: "OTP reset successfully. Please verify your login." };
 }
 
 export async function forgotYourPassword(email, projectId) {
-  const db = getDbClientByProject(projectId);
+  const { tenantDb } = await getTenantDb(projectId);
 
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  if (userRes.rows.length === 0) throw new Error("User not found");
 
   const otp = generateOtp();
   const otpExpiresAt = getOtpExpiry();
 
-  await db.user.update({
-    where: { email },
-    data: { otpCode: otp, otpExpiresAt },
-  });
+  await tenantDb.query(
+    `UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE email = $3`,
+    [otp, otpExpiresAt, email]
+  );
 
   console.log(`OTP for password reset for ${email}: ${otp}`);
   return { message: "OTP sent for password reset. Please verify." };
 }
 
 export async function verifyForgetOtp({ email, otp }, projectId) {
-  const db = getDbClientByProject(projectId);
+  const { tenantDb } = await getTenantDb(projectId);
 
-  const user = await db.user.findUnique({ where: { email } });
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
-  if (user.otpCode !== otp || user.otpExpiresAt < new Date()) {
+  if (user.otp_code !== otp || new Date(user.otp_expires_at) < new Date()) {
     throw new Error("Invalid or expired OTP");
   }
 
@@ -130,17 +132,17 @@ export async function verifyForgetOtp({ email, otp }, projectId) {
 }
 
 export async function resetYourPassword({ email, newPassword }, projectId) {
-  const db = getDbClientByProject(projectId);
+  const { tenantDb } = await getTenantDb(projectId);
 
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
+  const userRes = await tenantDb.query(`SELECT * FROM users WHERE email = $1`, [email]);
+  if (userRes.rows.length === 0) throw new Error("User not found");
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashed = await bcrypt.hash(newPassword, 10);
 
-  await db.user.update({
-    where: { email },
-    data: { password: hashedPassword, otpCode: null, otpExpiresAt: null },
-  });
+  await tenantDb.query(
+    `UPDATE users SET password = $1, otp_code = NULL, otp_expires_at = NULL WHERE email = $2`,
+    [hashed, email]
+  );
 
   return { message: "Password reset successfully. You can now log in with your new password." };
 }
