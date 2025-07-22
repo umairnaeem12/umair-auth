@@ -10,7 +10,6 @@ npm-debug.log*
 .env
 
 # Prisma
-.prisma/
 .env.test
 
 # VS Code settings
