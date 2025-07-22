@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { getClient, setClient } from "./tenantCache.js";
 import path from "path";
 import { pathToFileURL } from "url";
+import { existsSync } from "fs";
 
 // Initialize control DB with Accelerate URL
 const controlDb = new PrismaClient({
