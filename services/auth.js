@@ -8,10 +8,10 @@ async function generateToken(user, projectId) {
   try {
     console.log("🔐 Generating token for user:", user.id, "project:", projectId);
 
-    const jwtSecret = await getJwtSecret(projectId);
-    if (!jwtSecret) {
-      throw new Error("Missing JWT secret");
-    }
+    // const jwtSecret = await getJwtSecret(projectId);
+    // if (!jwtSecret) {
+    //   throw new Error("Missing JWT secret");
+    // }
 
     const token = jwt.sign({ userId: user.id }, jwtSecret, {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d",
