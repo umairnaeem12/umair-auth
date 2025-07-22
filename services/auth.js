@@ -30,16 +30,12 @@ async function generateToken(user, projectId) {
 }
 
 export async function registerUser(projectId, { name, email, password }) {
-  const prisma = await getPrismaClient(projectId);
+  const project = await globalPrisma.project.findUnique({ where: { id: projectId } });
+  if (!project || !project.dbUrl) throw new Error("Invalid project or dbUrl");
 
-  const existing = await prisma.user.findUnique({
-    where: {
-      email_projectId: {
-        email,
-        projectId,
-      }
-    }
-  });
+  const prisma = await getPrismaClient(projectId, project.dbUrl);
+
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error("Email already registered");
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,13 +46,10 @@ export async function registerUser(projectId, { name, email, password }) {
       email,
       password: hashedPassword,
       isVerified: false,
-      projectId
     },
   });
 
-  return {
-    message: "User registered successfully. Please log in to receive your OTP.",
-  };
+  return { message: "User registered successfully" };
 }
 
 export async function loginUser({ email, password }, projectId) {
