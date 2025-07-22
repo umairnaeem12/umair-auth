@@ -1,8 +1,8 @@
 import express from "express";
-import cors from "cors"; // ✅ Import CORS
+import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
-import { dataBaseSetup } from "./controllers/dbSetup.js";
+import { initProject } from "./services/initProject.js";
 
 dotenv.config();
 
@@ -12,6 +12,6 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/auth", authRoutes);
-app.post("/setup", dataBaseSetup);
+app.post("/initProject", initProject)
 
 app.listen(4000, () => console.log("Server running at http://localhost:4000"));

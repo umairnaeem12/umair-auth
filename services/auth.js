@@ -1,80 +1,39 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateOtp, getOtpExpiry } from "../utils/sendOtp.js";
-import { getPrismaClient } from "../utils/getPrismaClient.js";
-import { getJwtSecret } from "../utils/getJwtSecret.js";
-import { globalPrisma } from "../utils/globalPrisma.js";
+import { getDbClient } from "../utils/getDbClient.js"; // your new DB client
+import { getTenantDb } from "../utils/getTenantDbClient.js";
 
 // 🔐 Generate token
-async function generateToken(user, projectId) {
-  try {
-    console.log("🔐 Generating token for user:", user.id, "project:", projectId);
-
-    const jwtSecret = await getJwtSecret(projectId);
-    if (!jwtSecret) {
-      throw new Error("Missing JWT secret");
-    }
-
-    const token = jwt.sign({ userId: user.id }, jwtSecret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-    });
-
-    console.log("✅ Token generated successfully");
-    return token;
-  } catch (error) {
-    console.error("🚨 Token generation failed:", {
-      userId: user?.id,
-      projectId,
-      error: error.message
-    });
-    throw error;
-  }
+function generateToken(userId) {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) throw new Error("Missing JWT_SECRET");
+  return jwt.sign({ userId }, jwtSecret, { expiresIn: "7d" });
 }
 
 export async function registerUser(projectId, { name, email, password }) {
-  // 1. Get control DB project
-  const project = await globalPrisma.project.findUnique({
-    where: { id: projectId }
-  });
-  if (!project || !project.dbUrl) {
-    throw new Error("Invalid project or dbUrl");
-  }
+  const { tenantDb, jwtSecret } = await getTenantDb(projectId);
 
-  // 2. Get dynamic Prisma client for tenant DB
-  const prisma = await getPrismaClient(projectId, project.dbUrl);
-
-  // 3. Check if user already exists
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const existing = await tenantDb.query("SELECT * FROM users WHERE email = $1", [email]);
+  if (existing.rows.length > 0) {
     throw new Error("Email already registered");
   }
 
-  // 4. Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashed = await bcrypt.hash(password, 10);
 
-  // 5. Create user in tenant DB
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      isVerified: false,
-    },
-  });
+  const result = await tenantDb.query(
+    `INSERT INTO users (name, email, password, is_verified) VALUES ($1, $2, $3, $4) RETURNING id`,
+    [name, email, hashed, false]
+  );
 
-  // 6. Generate token (optional)
-  const token = await generateToken(user, projectId);
+  const token = jwt.sign({ userId: result.rows[0].id }, jwtSecret, { expiresIn: "7d" });
 
-  return {
-    message: "User registered successfully",
-    token, // optional
-  };
+  return { message: "User registered", token };
 }
 
 export async function loginUser({ email, password }, projectId) {
-  const prisma = await getPrismaClient(projectId);
-
-  const user = await prisma.user.findUnique({ where: { email } });
+  const db = getDbClientByProject(projectId);
+  const user = await db.user.findUnique({ where: { email } });
   if (!user) throw new Error("User not found");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -83,146 +42,105 @@ export async function loginUser({ email, password }, projectId) {
   const otp = generateOtp();
   const otpExpiresAt = getOtpExpiry();
 
-  await prisma.user.update({
+  await db.user.update({
     where: { email },
     data: { otpCode: otp, otpExpiresAt },
   });
 
   console.log(`OTP for ${email}: ${otp}`);
 
-  return {
-    message: "OTP sent. Please verify your login.",
-  };
+  return { message: "OTP sent. Please verify your login." };
 }
 
 export async function verifySignupOtp({ email, otp }, projectId) {
-  try {
-    console.log("🔍 Verifying OTP for:", { email, projectId });
+  const db = getDbClientByProject(projectId);
 
-    const prisma = await getPrismaClient(projectId);
-    console.log("✅ Prisma client obtained for project:", projectId);
-
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      console.error("User not found with email:", email);
-      throw new Error("User not found");
-    }
-
-    console.log("🔍 User found. Checking OTP...");
-
-    if (user.otpCode !== otp || user.otpExpiresAt < new Date()) {
-      console.error("Invalid OTP for user:", user.id);
-      throw new Error("Invalid or expired OTP");
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { email },
-      data: {
-        otpCode: null,
-        otpExpiresAt: null,
-        isVerified: true
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isVerified: true,
-        createdAt: true,
-      },
-    });
-
-    const token = await generateToken(updatedUser, projectId);
-
-    return {
-      message: "Login verified successfully",
-      user: updatedUser,
-      token,
-    };
-  } catch (error) {
-    console.error("🚨 Error in verifySignupOtp:", {
-      email,
-      projectId,
-      error: error.message,
-      stack: error.stack
-    });
-    throw error;
-  }
-}
-
-export async function resetOtp(email, projectId) {
-  const prisma = await getPrismaClient(projectId);
-
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
-
-  const otp = generateOtp();
-  const otpExpiresAt = getOtpExpiry();
-
-  await prisma.user.update({
-    where: { email },
-    data: { otpCode: otp, otpExpiresAt },
-  });
-
-  console.log(`OTP for ${email}: ${otp}`);
-
-  return {
-    message: "OTP reset successfully. Please verify your login.",
-  };
-}
-
-export async function forgotYourPassword(email, projectId) {
-  const prisma = await getPrismaClient(projectId);
-
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
-
-  const otp = generateOtp();
-  const otpExpiresAt = getOtpExpiry();
-
-  await prisma.user.update({
-    where: { email },
-    data: { otpCode: otp, otpExpiresAt },
-  });
-
-  console.log(`OTP for password reset for ${email}: ${otp}`);
-
-  return {
-    message: "OTP sent for password reset. Please verify.",
-  };
-}
-
-export async function verifyForgetOtp({ email, otp }, projectId) {
-  const prisma = await getPrismaClient(projectId);
-
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await db.user.findUnique({ where: { email } });
   if (!user) throw new Error("User not found");
 
   if (user.otpCode !== otp || user.otpExpiresAt < new Date()) {
     throw new Error("Invalid or expired OTP");
   }
 
+  const updatedUser = await db.user.update({
+    where: { email },
+    data: {
+      otpCode: null,
+      otpExpiresAt: null,
+      isVerified: true,
+    },
+  });
+
+  const token = generateToken(updatedUser.id);
+
   return {
-    message: "OTP verified successfully. You can now reset your password.",
+    message: "Login verified successfully",
+    user: updatedUser,
+    token,
   };
 }
 
-export async function resetYourPassword({ email, newPassword }, projectId) {
-  const prisma = await getPrismaClient(projectId);
+export async function resetOtp(email, projectId) {
+  const db = getDbClientByProject(projectId);
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await db.user.findUnique({ where: { email } });
+  if (!user) throw new Error("User not found");
+
+  const otp = generateOtp();
+  const otpExpiresAt = getOtpExpiry();
+
+  await db.user.update({
+    where: { email },
+    data: { otpCode: otp, otpExpiresAt },
+  });
+
+  console.log(`OTP for ${email}: ${otp}`);
+  return { message: "OTP reset successfully. Please verify your login." };
+}
+
+export async function forgotYourPassword(email, projectId) {
+  const db = getDbClientByProject(projectId);
+
+  const user = await db.user.findUnique({ where: { email } });
+  if (!user) throw new Error("User not found");
+
+  const otp = generateOtp();
+  const otpExpiresAt = getOtpExpiry();
+
+  await db.user.update({
+    where: { email },
+    data: { otpCode: otp, otpExpiresAt },
+  });
+
+  console.log(`OTP for password reset for ${email}: ${otp}`);
+  return { message: "OTP sent for password reset. Please verify." };
+}
+
+export async function verifyForgetOtp({ email, otp }, projectId) {
+  const db = getDbClientByProject(projectId);
+
+  const user = await db.user.findUnique({ where: { email } });
+  if (!user) throw new Error("User not found");
+
+  if (user.otpCode !== otp || user.otpExpiresAt < new Date()) {
+    throw new Error("Invalid or expired OTP");
+  }
+
+  return { message: "OTP verified successfully. You can now reset your password." };
+}
+
+export async function resetYourPassword({ email, newPassword }, projectId) {
+  const db = getDbClientByProject(projectId);
+
+  const user = await db.user.findUnique({ where: { email } });
   if (!user) throw new Error("User not found");
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  await prisma.user.update({
+  await db.user.update({
     where: { email },
     data: { password: hashedPassword, otpCode: null, otpExpiresAt: null },
   });
 
-  return {
-    message: "Password reset successfully. You can now log in with your new password.",
-  };
+  return { message: "Password reset successfully. You can now log in with your new password." };
 }
