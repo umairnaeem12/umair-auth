@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { generateOtp, getOtpExpiry } from "../utils/sendOtp.js";
 import { getTenantDb } from "../utils/getTenantDbClient.js";
+import { sendOtpEmail } from "../utils/sendMail.js";
 
 // 🔐 Generate token
 function generateToken(userId, jwtSecret) {
@@ -45,6 +46,8 @@ export async function loginUser({ email, password }, projectId) {
     `UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE email = $3`,
     [otp, otpExpiresAt, email]
   );
+
+  await sendOtpEmail(email, otp);
 
   console.log(`OTP for ${email}: ${otp}`);
   return { message: "OTP sent. Please verify your login." };
