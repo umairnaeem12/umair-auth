@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { generateOtp, getOtpExpiry } from "../utils/sendOtp.js";
 import { getPrismaClient } from "../utils/getPrismaClient.js";
 import { getJwtSecret } from "../utils/getJwtSecret.js";
-
+import { globalPrisma } from "../utils/globalPrisma.js";
 
 // 🔐 Generate token
 async function generateToken(user, projectId) {
