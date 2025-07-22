@@ -6,7 +6,7 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 export async function pushPrismaSchemaToDatabase(dbUrl, projectId) {
-  const tmpDir = "./tmp";
+  const tmpDir = "./prisma/tenants";
   const schemaPath = `${tmpDir}/schema-${projectId}.prisma`;
 
   // ✅ Ensure ./tmp directory exists
@@ -17,8 +17,8 @@ export async function pushPrismaSchemaToDatabase(dbUrl, projectId) {
   const schemaContent = `
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["clientExtensions", "dataProxy"]
-  output = "./tmp/prisma/tenants/generated-${projectId}"
+  previewFeatures = ["clientExtensions"]
+  output = "./prisma/tenants/generated-${projectId}"
 }
 
 datasource db {

@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
 }
 
 datasource db {
@@ -14,18 +15,4 @@ model Project {
   createdAt DateTime @default(now())
 
   @@map("Project")
-}
-
-model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String
-  password     String
-  isVerified   Boolean   @default(false)
-  otpCode      String?
-  otpExpiresAt DateTime?
-  createdAt    DateTime  @default(now())
-  projectId    String
-
-  @@unique([email, projectId])
 }
