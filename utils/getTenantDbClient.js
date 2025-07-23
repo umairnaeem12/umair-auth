@@ -1,5 +1,5 @@
 // utils/getTenantDbClient.js
-import { globalPg } from "./globalPgClient.js";
+import { globalPg } from "./globalPg.js";
 import pkg from 'pg';
 const { Pool } = pkg;
 

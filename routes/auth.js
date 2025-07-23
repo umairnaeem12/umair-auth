@@ -9,7 +9,6 @@ import {
   resetPassword,
   getProjectIdByName
 } from "../controllers/auth.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

@@ -16,7 +16,7 @@ import {
     verifyForgetOtp,
     resetYourPassword,
 } from "../services/auth.js";
-import { globalPg } from "../utils/globalPgClient.js";
+import { globalPg } from "../utils/globalPg.js";
 
 export async function getProjectIdByName(req, res) {
     const { name } = req.query;

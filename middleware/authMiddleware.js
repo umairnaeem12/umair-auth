@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { globalPg } from "../utils/globalPgClient"; // adjust path if needed
+import { globalPg } from "../utils/globalPg"; // adjust path if needed
 
 export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
