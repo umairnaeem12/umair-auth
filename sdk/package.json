@@ -1,6 +1,6 @@
 {
   "name": "umair-auth",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Frontend SDK for Umair Auth - plug-and-play user authentication",
   "main": "index.js",
   "type": "module",

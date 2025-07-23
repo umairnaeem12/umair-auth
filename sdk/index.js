@@ -1,7 +1,6 @@
-// umair-auth/index.js (Frontend SDK)
+// umair-auth/index.js (Frontend SDK - stateless version)
 
-const BASE_URL = "https://umair-auth-production.up.railway.app"; // ✅ Your hosted backend URL
-let cachedProjectId = null;
+const BASE_URL = "https://umair-auth-production.up.railway.app";
 
 // 🚀 Called once to register a new project (tenant)
 export async function initProject({ name, dbUrl, jwtSecret }) {
@@ -13,27 +12,23 @@ export async function initProject({ name, dbUrl, jwtSecret }) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Project init failed");
-
-  // Save projectId to localStorage and cache
-  localStorage.setItem("umair_auth_project_id", data.projectId);
-  cachedProjectId = data.projectId;
-
   return data;
 }
 
-function getProjectId() {
-  if (cachedProjectId) return cachedProjectId;
-  const pid = localStorage.getItem("umair_auth_project_id");
-  if (!pid) throw new Error("Project not initialized. Call initProject() first.");
-  return pid;
+async function getProjectIdByName(projectName) {
+  const res = await fetch(`${BASE_URL}/get-project-id?name=${encodeURIComponent(projectName)}`);
+  const data = await res.json();
+  if (!res.ok || !data.projectId) throw new Error("Failed to retrieve projectId");
+  return data.projectId;
 }
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password, projectName }) {
+  const projectId = await getProjectIdByName(projectName);
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "projectid": getProjectId()
+      "x-project-id": projectId
     },
     body: JSON.stringify({ name, email, password })
   });
@@ -43,31 +38,29 @@ export async function registerUser({ name, email, password }) {
   return data;
 }
 
-export async function loginUser({ email, password }) {
+export async function loginUser({ email, password, projectName }) {
+  const projectId = await getProjectIdByName(projectName);
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "projectid": getProjectId()
+      "x-project-id": projectId
     },
     body: JSON.stringify({ email, password })
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Login failed");
-
-  // Optionally store token for later usage
-  localStorage.setItem("umair_auth_token", data.token);
-
   return data;
 }
 
-export async function verifySignupOtp({ email, otp }) {
+export async function verifySignupOtp({ email, otp, projectName }) {
+  const projectId = await getProjectIdByName(projectName);
   const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "projectid": getProjectId()
+      "x-project-id": projectId
     },
     body: JSON.stringify({ email, otp })
   });
@@ -77,12 +70,13 @@ export async function verifySignupOtp({ email, otp }) {
   return data;
 }
 
-export async function resendSignupOtp({ email }) {
+export async function resendSignupOtp({ email, projectName }) {
+  const projectId = await getProjectIdByName(projectName);
   const res = await fetch(`${BASE_URL}/auth/resend-signup-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "projectid": getProjectId()
+      "x-project-id": projectId
     },
     body: JSON.stringify({ email })
   });
