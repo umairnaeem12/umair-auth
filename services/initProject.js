@@ -1,5 +1,5 @@
 // services/initProject.js
-import { globalPg } from "../utils/globalPgClient.js";
+import { globalPg } from "../utils/globalPg.js";
 import { v4 as uuidv4 } from "uuid";
 import pkg from "pg";
 const { Pool } = pkg;
