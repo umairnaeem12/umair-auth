@@ -1,17 +1,12 @@
 {
   "name": "umair-auth",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "A plug-and-play authentication backend for frontend developers. Built with Express, JWT, Prisma, and PostgreSQL.",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
-    "start": "node index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "module",
+  "license": "MIT",
+  "keywords": ["auth", "backend", "jwt", "otp", "postgresql", "prisma", "multi-tenant", "express"],
+  "author": "Umair Naeem",
   "files": [
     "controllers",
     "services",
@@ -19,21 +14,25 @@
     "prisma",
     "index.js"
   ],
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "@prisma/client": "^6.12.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.5",
-    "nodemon": "^3.1.10",
     "pg": "^8.16.3",
     "uuid": "^11.1.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {
     "dotenv": "^17.2.0",
+    "nodemon": "^3.1.10",
     "prisma": "^6.12.0"
   }
 }

@@ -12,7 +12,7 @@ router.use((req, res, next) => {
     req.projectId = projectId;
     next();
 });
-
+router.get("/get-project-id", getProjectIdByName);
 router.post("/register", register);
 router.post("/login", login);
 router.post("/verify-otp", verifyLoginOtp);

@@ -16,6 +16,31 @@ import {
     verifyForgetOtp,
     resetYourPassword,
 } from "../services/auth.js";
+import { globalPg } from "../utils/globalPgClient.js";
+
+export async function getProjectIdByName(req, res) {
+    const { name } = req.query;
+
+    if (!name) {
+        return res.status(400).json({ message: "Project name is required" });
+    }
+
+    try {
+        const result = await globalPg.query(
+            `SELECT id FROM "Project" WHERE name = $1 LIMIT 1`,
+            [name]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+
+        return res.json({ projectId: result.rows[0].id });
+    } catch (error) {
+        console.error("❌ Error fetching project ID:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
 export async function register(req, res) {
     const result = registerSchema.safeParse(req.body);
@@ -51,24 +76,24 @@ export async function login(req, res) {
 }
 
 export async function verifyLoginOtp(req, res) {
-  const result = verifySignupOtpSchema.safeParse(req.body);
-  if (!result.success) {
-      return res.status(400).json({ errors: result.error.flatten().fieldErrors });
+    const result = verifySignupOtpSchema.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({ errors: result.error.flatten().fieldErrors });
     }
-    
+
     const projectId = req.headers["x-project-id"] || req.body.projectId || req.projectId;
     console.log("🚀 ~ verifyLoginOtp ~ projectId:", projectId)
-  if (!projectId) {
-    return res.status(400).json({ error: "Missing project ID" });
-  }
+    if (!projectId) {
+        return res.status(400).json({ error: "Missing project ID" });
+    }
 
-  try {
-    const response = await verifySignupOtp(result.data, projectId);
-    res.status(200).json(response);
-  } catch (error) {
-    console.error("Verify Signup OTP Controller Error:", error);
-    res.status(500).json({ error: error.message || "Something went wrong" });
-  }
+    try {
+        const response = await verifySignupOtp(result.data, projectId);
+        res.status(200).json(response);
+    } catch (error) {
+        console.error("Verify Signup OTP Controller Error:", error);
+        res.status(500).json({ error: error.message || "Something went wrong" });
+    }
 }
 
 export async function resetLoginOtp(req, res) {
