@@ -12,10 +12,12 @@ import {
 
 const router = express.Router();
 
-// ❗ Route that does not require x-project-id
+// ❗ These routes DON'T require x-project-id
 router.get("/get-project-id", getProjectIdByName);
+router.post("/register", register);
+router.post("/login", login);
 
-// ✅ Middleware to ensure projectId is provided for all routes below
+// ✅ These routes require x-project-id
 router.use((req, res, next) => {
   const projectId = req.headers["x-project-id"];
   if (!projectId) {
@@ -25,15 +27,13 @@ router.use((req, res, next) => {
   next();
 });
 
-router.post("/register", register);
-router.post("/login", login);
 router.post("/verify-otp", verifyLoginOtp);
 router.post("/reset-otp", resetLoginOtp);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-forgot-otp", verifyForgotOtp);
 router.post("/reset-password", resetPassword);
 
-// 🛡 Example of protected route using auth middleware
-// router.get("/me", authMiddleware, someHandler);
+// Example protected route
+// router.get("/me", authMiddleware, me);
 
 export default router;
