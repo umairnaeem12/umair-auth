@@ -26,7 +26,7 @@ export async function registerUser(projectId, { name, email, password }) {
   );
 
   const token = generateToken(result.rows[0].id, jwtSecret);
-  return { message: "User registered", token };
+  return { message: "User registered" };
 }
 
 export async function loginUser({ email, password }, projectId) {

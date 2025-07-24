@@ -24,6 +24,24 @@ npm install umair-auth
 
 Before calling any auth method, initialize your project once:
 
+### 🌱 How to Get Your DB URL from Neon
+
+To connect your project with a Neon PostgreSQL database, follow these steps:
+
+1. **Create a Neon Project**  
+Go to [https://neon.tech](https://neon.tech)  
+Sign in and click **“New Project”**  
+Choose a name and create your PostgreSQL instance
+
+2. **Copy the Connection String**  
+After your database is ready, go to the **“Connection Details”** section in the dashboard  
+Click **“Connection String”**, then select **“Include credentials”**  
+Copy a connection string like this:
+
+```
+postgresql://neondb_owner:yourpassword@ep-silver-hat-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+```
+
 ```js
 import { initProject } from 'umair-auth';
 
