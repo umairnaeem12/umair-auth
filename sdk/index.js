@@ -17,13 +17,16 @@ export async function initProject({ name, dbUrl, jwtSecret }) {
 
 async function getProjectIdByName(projectName) {
   const res = await fetch(`${BASE_URL}/get-project-id?name=${encodeURIComponent(projectName)}`);
+  console.log("🚀 ~ getProjectIdByName ~ res:", res)
   const data = await res.json();
+  console.log("🚀 ~ getProjectIdByName ~ data:", data)
   if (!res.ok || !data.projectId) throw new Error("Failed to retrieve projectId");
   return data.projectId;
 }
 
 export async function registerUser({ name, email, password, projectName }) {
   const projectId = await getProjectIdByName(projectName);
+  console.log("🚀 ~ registerUser ~ projectId:", projectId)
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: {

@@ -14,8 +14,6 @@ const router = express.Router();
 
 // ❗ These routes DON'T require x-project-id
 router.get("/get-project-id", getProjectIdByName);
-router.post("/register", register);
-router.post("/login", login);
 
 // ✅ These routes require x-project-id
 router.use((req, res, next) => {
@@ -27,6 +25,8 @@ router.use((req, res, next) => {
   next();
 });
 
+router.post("/register", register);
+router.post("/login", login);
 router.post("/verify-otp", verifyLoginOtp);
 router.post("/reset-otp", resetLoginOtp);
 router.post("/forgot-password", forgotPassword);

@@ -20,6 +20,7 @@ import { globalPg } from "../utils/globalPg.js";
 
 export async function getProjectIdByName(req, res) {
     const { name } = req.query;
+    console.log("🚀 ~ getProjectIdByName ~ name:", name)
 
     if (!name) {
         return res.status(400).json({ message: "Project name is required" });
