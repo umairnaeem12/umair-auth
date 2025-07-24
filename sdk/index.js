@@ -1,7 +1,4 @@
-// umair-auth/index.js (Frontend SDK - stateless version)
-
-const BASE_URL = "https://umair-auth-production.up.railway.app";
-let currentProjectId = null; // 🔐 Stored globally in SDK memory
+const BASE_URL = "https://umair-auth-production.up.railway.app"; // or localhost during dev
 
 // 🚀 Called once to register a new project (tenant)
 export async function initProject({ name, dbUrl, jwtSecret }) {
@@ -14,20 +11,12 @@ export async function initProject({ name, dbUrl, jwtSecret }) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Project init failed");
 
-  currentProjectId = data.projectId; // ✅ Store projectId globally
-  console.log("✅ Project initialized with ID:", currentProjectId);
-
-  return data;
+  console.log("✅ Project initialized with ID:", data.projectId);
+  return data; // { projectId, ... }
 }
 
-// ✅ Use this for any call that needs projectId
-function getProjectIdOrThrow() {
-  if (!currentProjectId) throw new Error("Project is not initialized. Call initProject() first.");
-  return currentProjectId;
-}
-
-// ✅ Register User
-export async function registerUser({ name, email, password, projectId = '' }) {
+// ✅ Register User (requires projectId from frontend)
+export async function registerUser({ name, email, password, projectId }) {
   if (!projectId) throw new Error("Project ID is required.");
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
@@ -43,9 +32,9 @@ export async function registerUser({ name, email, password, projectId = '' }) {
   return data;
 }
 
-// ✅ Login User
-export async function loginUser({ email, password }) {
-  const projectId = getProjectIdOrThrow();
+// ✅ Login User (requires projectId from frontend)
+export async function loginUser({ email, password, projectId }) {
+  if (!projectId) throw new Error("Project ID is required.");
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
@@ -60,9 +49,9 @@ export async function loginUser({ email, password }) {
   return data;
 }
 
-
-export async function verifySignupOtp({ email, otp, projectName }) {
-  const projectId = await getProjectIdByName(projectName);
+// ✅ Verify OTP (requires projectId from frontend)
+export async function verifySignupOtp({ email, otp, projectId }) {
+  if (!projectId) throw new Error("Project ID is required.");
   const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {
     method: "POST",
     headers: {
@@ -77,8 +66,9 @@ export async function verifySignupOtp({ email, otp, projectName }) {
   return data;
 }
 
-export async function resendSignupOtp({ email, projectName }) {
-  const projectId = await getProjectIdByName(projectName);
+// ✅ Resend OTP (requires projectId from frontend)
+export async function resendSignupOtp({ email, projectId }) {
+  if (!projectId) throw new Error("Project ID is required.");
   const res = await fetch(`${BASE_URL}/auth/resend-signup-otp`, {
     method: "POST",
     headers: {
