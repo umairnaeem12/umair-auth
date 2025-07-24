@@ -27,13 +27,13 @@ function getProjectIdOrThrow() {
 }
 
 // ✅ Register User
-export async function registerUser({ name, email, password }) {
-  const projectId = getProjectIdOrThrow();
+export async function registerUser({ name, email, password, projectId = null }) {
+  const finalProjectId = projectId || getProjectIdOrThrow();
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-project-id": projectId
+      "x-project-id": finalProjectId
     },
     body: JSON.stringify({ name, email, password })
   });
