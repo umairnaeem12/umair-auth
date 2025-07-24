@@ -98,6 +98,7 @@ export async function resetOtp(email, projectId) {
     [otp, otpExpiresAt, email]
   );
 
+  await sendOtpEmail(email, otp);
   console.log(`OTP for ${email}: ${otp}`);
   return { message: "OTP reset successfully. Please verify your login." };
 }
@@ -116,6 +117,7 @@ export async function forgotYourPassword(email, projectId) {
     [otp, otpExpiresAt, email]
   );
 
+  await sendOtpEmail(email, otp);
   console.log(`OTP for password reset for ${email}: ${otp}`);
   return { message: "OTP sent for password reset. Please verify." };
 }
