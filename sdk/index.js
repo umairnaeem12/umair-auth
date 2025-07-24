@@ -50,7 +50,7 @@ export async function loginUser({ email, password, projectId }) {
 // ✅ Verify signup OTP
 export async function verifySignupOtp({ email, otp, projectId }) {
   if (!projectId) throw new Error("Project ID is required.");
-  const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {
+  const res = await fetch(`${BASE_URL}/auth/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
