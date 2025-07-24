@@ -1,6 +1,7 @@
 // umair-auth/index.js (Frontend SDK - stateless version)
 
 const BASE_URL = "https://umair-auth-production.up.railway.app";
+let currentProjectId = null; // 🔐 Stored globally in SDK memory
 
 // 🚀 Called once to register a new project (tenant)
 export async function initProject({ name, dbUrl, jwtSecret }) {
@@ -12,21 +13,22 @@ export async function initProject({ name, dbUrl, jwtSecret }) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Project init failed");
+
+  currentProjectId = data.projectId; // ✅ Store projectId globally
+  console.log("✅ Project initialized with ID:", currentProjectId);
+
   return data;
 }
 
-async function getProjectIdByName(projectName) {
-  const res = await fetch(`${BASE_URL}/auth/get-project-id?name=${encodeURIComponent(projectName)}`);
-  console.log("🚀 ~ getProjectIdByName ~ res:", res)
-  const data = await res.json();
-  console.log("🚀 ~ getProjectIdByName ~ data:", data)
-  if (!res.ok || !data.projectId) throw new Error("Failed to retrieve projectId");
-  return data.projectId;
+// ✅ Use this for any call that needs projectId
+function getProjectIdOrThrow() {
+  if (!currentProjectId) throw new Error("Project is not initialized. Call initProject() first.");
+  return currentProjectId;
 }
 
-export async function registerUser({ name, email, password, projectName }) {
-  const projectId = await getProjectIdByName(projectName);
-  console.log("🚀 ~ registerUser ~ projectId:", projectId)
+// ✅ Register User
+export async function registerUser({ name, email, password }) {
+  const projectId = getProjectIdOrThrow();
   const res = await fetch(`${BASE_URL}/auth/register`, {
     method: "POST",
     headers: {
@@ -41,8 +43,9 @@ export async function registerUser({ name, email, password, projectName }) {
   return data;
 }
 
-export async function loginUser({ email, password, projectName }) {
-  const projectId = await getProjectIdByName(projectName);
+// ✅ Login User
+export async function loginUser({ email, password }) {
+  const projectId = getProjectIdOrThrow();
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
@@ -56,6 +59,7 @@ export async function loginUser({ email, password, projectName }) {
   if (!res.ok) throw new Error(data.message || "Login failed");
   return data;
 }
+
 
 export async function verifySignupOtp({ email, otp, projectName }) {
   const projectId = await getProjectIdByName(projectName);
