@@ -16,7 +16,7 @@ export async function initProject({ name, dbUrl, jwtSecret }) {
 }
 
 async function getProjectIdByName(projectName) {
-  const res = await fetch(`${BASE_URL}/get-project-id?name=${encodeURIComponent(projectName)}`);
+  const res = await fetch(`${BASE_URL}/auth/get-project-id?name=${encodeURIComponent(projectName)}`);
   console.log("🚀 ~ getProjectIdByName ~ res:", res)
   const data = await res.json();
   console.log("🚀 ~ getProjectIdByName ~ data:", data)

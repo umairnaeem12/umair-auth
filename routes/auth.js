@@ -33,7 +33,4 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-forgot-otp", verifyForgotOtp);
 router.post("/reset-password", resetPassword);
 
-// Example protected route
-// router.get("/me", authMiddleware, me);
-
 export default router;
